@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 数字员工 · 多 Agent 调度系统</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0c0e;
+    --surface: #161618;
+    --surface2: #1e1e22;
+    --border: #2a2a30;
+    --text: #e8e8ed;
+    --text-secondary: #92929f;
+    --accent: #6c5ce7;
+    --accent-glow: rgba(108, 92, 231, 0.25);
+    --green: #00d68f;
+    --green-bg: rgba(0, 214, 143, 0.1);
+    --red: #ff6b6b;
+    --red-bg: rgba(255, 107, 107, 0.1);
+    --amber: #f7b731;
+    --amber-bg: rgba(247, 183, 49, 0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -20%, rgba(108, 92, 231, 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0, 214, 143, 0.04) 0%, transparent 70%);
+  }
+
+  .container {
+    max-width: 960px;
+    width: 100%;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--accent), #a29bfe);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    box-shadow: 0 0 24px var(--accent-glow);
+  }
+
+  .header-text h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .header-text p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 300;
+    margin-top: 2px;
+  }
+
+  /* Input section */
+  .input-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    transition: border-color 0.3s;
+  }
+
+  .input-section:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 32px var(--accent-glow);
+  }
+
+  .input-section label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 90px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.9rem 1rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.6;
+  }
+
+  textarea::placeholder { color: #555; }
+  textarea:focus { border-color: var(--accent); }
+
+  .input-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #8b7cf7);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 1.8rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    letter-spacing: 0.01em;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px var(--accent-glow);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-sample {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 1.2rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-sample:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0 1.5rem 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .status-dot.idle { background: var(--text-secondary); }
+  .status-dot.running { background: var(--amber); animation: pulse-dot 0.8s ease-in-out infinite; }
+  .status-dot.done { background: var(--green); }
+  .status-dot.error { background: var(--red); }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* Agent grid */
+  .agent-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 640px) {
+    .agent-grid { grid-template-columns: 1fr; }
+  }
+
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  .agent-card.card-loading::before { background: var(--amber); }
+  .agent-card.card-ok::before { background: var(--green); }
+  .agent-card.card-error::before { background: var(--red); }
+
+  .agent-card.card-ok {
+    border-color: rgba(0, 214, 143, 0.2);
+    box-shadow: 0 0 24px rgba(0, 214, 143, 0.04);
+  }
+
+  .agent-card.card-error {
+    border-color: rgba(255, 107, 107, 0.2);
+  }
+
+  .agent-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .agent-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .agent-icon.sales { background: rgba(108, 92, 231, 0.15); }
+  .agent-icon.tech { background: rgba(0, 214, 143, 0.15); }
+  .agent-icon.quote { background: rgba(247, 183, 49, 0.15); }
+  .agent-icon.followup { background: rgba(255, 107, 107, 0.15); }
+
+  .agent-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .agent-status {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .agent-status.s-pending { background: var(--surface2); color: var(--text-secondary); }
+  .agent-status.s-loading { background: var(--amber-bg); color: var(--amber); }
+  .agent-status.s-ok { background: var(--green-bg); color: var(--green); }
+  .agent-status.s-error { background: var(--red-bg); color: var(--red); }
+
+  .agent-content {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 2em;
+  }
+
+  .agent-content p { margin-bottom: 0.5em; }
+
+  .agent-error {
+    font-size: 0.8rem;
+    color: var(--red);
+    padding: 0.5rem 0.75rem;
+    background: var(--red-bg);
+    border-radius: var(--radius-sm);
+    margin-top: 0.5rem;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+  }
+
+  .spinner .ring {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--amber);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .spinner span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  /* Result fade-in */
+  .agent-card.card-ok .agent-content,
+  .agent-card.card-error .agent-content {
+    animation: fadeIn 0.35s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hidden { display: none; }
+
+  /* Footer */
+  footer {
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #444;
+    font-family: 'DM Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <header>
+    <div class="logo">&#9889;</div>
+    <div class="header-text">
+      <h1>AI 数字员工</h1>
+      <p>多 Agent 协同调度系统 &middot; 并行调用 4 个智能代理</p>
+    </div>
+  </header>
+
+  <div class="input-section">
+    <label for="messageInput">&#9998; 客户消息</label>
+    <textarea id="messageInput" placeholder="输入客户需求描述，例如：我们需要一套企业级CRM系统，预算50万..."></textarea>
+    <div class="input-actions">
+      <button class="btn-primary" id="dispatchBtn" onclick="dispatch()">
+        &#9654; 调度 Agent
+      </button>
+      <button class="btn-sample" onclick="fillSample()">
+        &#128196; 填入示例消息
+      </button>
+    </div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <span class="status-dot idle" id="statusDot"></span>
+    <span id="statusText">就绪 — 输入消息后点击调度</span>
+  </div>
+
+  <div class="agent-grid" id="agentGrid">
+    <div class="agent-card" data-agent="sales">
+      <div class="agent-header">
+        <div class="agent-icon sales">&#128722;</div>
+        <span class="agent-name">销售代理</span>
+        <span class="agent-status s-pending">等待</span>
+      </div>
+      <div class="agent-content" id="content-sales">等待调度...</div>
+    </div>
+    <div class="agent-card" data-agent="tech">
+      <div class="agent-header">
+        <div class="agent-icon tech">&#128295;</div>
+        <span class="agent-name">技术代理</span>
+        <span class="agent-status s-pending">等待</span>
+      </div>
+      <div class="agent-content" id="content-tech">等待调度...</div>
+    </div>
+    <div class="agent-card" data-agent="quote">
+      <div class="agent-header">
+        <div class="agent-icon quote">&#128176;</div>
+        <span class="agent-name">报价代理</span>
+        <span class="agent-status s-pending">等待</span>
+      </div>
+      <div class="agent-content" id="content-quote">等待调度...</div>
+    </div>
+    <div class="agent-card" data-agent="followup">
+      <div class="agent-header">
+        <div class="agent-icon followup">&#128222;</div>
+        <span class="agent-name">跟进代理</span>
+        <span class="agent-status s-pending">等待</span>
+      </div>
+      <div class="agent-content" id="content-followup">等待调度...</div>
+    </div>
+  </div>
+
+  <footer>AI Digital Employee &middot; Agent Orchestrator v1.0</footer>
+</div>
+
+<script>
+const AGENTS = ['sales', 'tech', 'quote', 'followup'];
+const AGENT_LABELS = { sales: '销售代理', tech: '技术代理', quote: '报价代理', followup: '跟进代理' };
+const AGENT_EMOJI = { sales: '🛒', tech: '🔧', quote: '💰', followup: '📞' };
+
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const dispatchBtn = document.getElementById('dispatchBtn');
+const messageInput = document.getElementById('messageInput');
+
+function setStatus(state, text) {
+  statusDot.className = 'status-dot ' + state;
+  statusText.textContent = text;
+}
+
+function getCard(agent) {
+  return document.querySelector(`.agent-card[data-agent="${agent}"]`);
+}
+
+function setCardState(agent, state, content) {
+  const card = getCard(agent);
+  const contentEl = document.getElementById('content-' + agent);
+  const statusEl = card.querySelector('.agent-status');
+
+  card.className = 'agent-card';
+  if (state === 'loading') {
+    card.classList.add('card-loading');
+    statusEl.className = 'agent-status s-loading';
+    statusEl.textContent = '运行中';
+    contentEl.innerHTML = '<div class="spinner"><div class="ring"></div><span>Agent 思考中...</span></div>';
+  } else if (state === 'ok') {
+    card.classList.add('card-ok');
+    statusEl.className = 'agent-status s-ok';
+    statusEl.textContent = '完成';
+    contentEl.innerHTML = '';
+    if (content) {
+      const pre = document.createElement('div');
+      pre.className = 'agent-content';
+      pre.textContent = content;
+      contentEl.appendChild(pre);
+    }
+  } else if (state === 'error') {
+    card.classList.add('card-error');
+    statusEl.className = 'agent-status s-error';
+    statusEl.textContent = '失败';
+    contentEl.innerHTML = '<div class="agent-error">' + escapeHtml(content) + '</div>';
+  } else {
+    statusEl.className = 'agent-status s-pending';
+    statusEl.textContent = '等待';
+    contentEl.textContent = '等待调度...';
+  }
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function fillSample() {
+  messageInput.value = '我们需要一套企业级CRM系统，预算50万，技术栈要求Java微服务';
+  messageInput.focus();
+}
+
+async function dispatch() {
+  const message = messageInput.value.trim();
+  if (!message) {
+    messageInput.focus();
+    messageInput.style.borderColor = 'var(--red)';
+    setTimeout(() => messageInput.style.borderColor = '', 1500);
+    return;
+  }
+
+  dispatchBtn.disabled = true;
+  dispatchBtn.textContent = '⏳ 调度中...';
+  setStatus('running', '正在并行调度 4 个 Agent...');
+
+  for (const agent of AGENTS) {
+    setCardState(agent, 'loading');
+  }
+
+  try {
+    const res = await fetch('/process', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ detail: 'HTTP ' + res.status }));
+      throw new Error(errData.detail || '请求失败');
+    }
+
+    const data = await res.json();
+    const result = data.result || {};
+
+    let okCount = 0, errCount = 0;
+    for (const agent of AGENTS) {
+      const r = result[agent];
+      if (r) {
+        if (r.status === 'ok') {
+          setCardState(agent, 'ok', r.content || '(无内容)');
+          okCount++;
+        } else {
+          setCardState(agent, 'error', r.error || r.content || '未知错误');
+          errCount++;
+        }
+      } else {
+        setCardState(agent, 'error', 'Agent 无响应');
+        errCount++;
+      }
+    }
+
+    if (errCount === 0) {
+      setStatus('done', `调度完成 — ${okCount} 个 Agent 全部成功`);
+    } else if (okCount > 0) {
+      setStatus('done', `调度完成 — ${okCount} 成功，${errCount} 失败`);
+    } else {
+      setStatus('error', `调度完成 — 全部 ${errCount} 个 Agent 均失败`);
+    }
+  } catch (err) {
+    setStatus('error', '请求失败: ' + err.message);
+    for (const agent of AGENTS) {
+      setCardState(agent, 'error', '请求异常: ' + err.message);
+    }
+  } finally {
+    dispatchBtn.disabled = false;
+    dispatchBtn.textContent = '▶ 调度 Agent';
+  }
+}
+
+// Enter key to dispatch
+messageInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    dispatch();
+  }
+});
+</script>
+</body>
+</html>

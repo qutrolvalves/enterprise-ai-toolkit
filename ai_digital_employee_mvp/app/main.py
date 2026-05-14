@@ -10,7 +10,9 @@ AI 数字员工 + 多 Agent 协同系统 - API 主入口。
 import logging
 from contextlib import asynccontextmanager
 
+import os
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 from .schemas import RequestIn, RequestOut, HealthResponse
 from .orchestrator import orchestrate_request
 from .database import init_db, save_request, get_db_available
@@ -59,6 +61,22 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# ---------------------------------------------------------------------------
+# 静态文件路径（前端 UI）
+# ---------------------------------------------------------------------------
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    """根路径返回前端页面。"""
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        with open(index_path, encoding="utf-8") as f:
+            content = f.read()
+        return HTMLResponse(content=content)
+    return HTMLResponse(content="<h1>前端页面未就绪</h1>", status_code=503)
 
 
 # ---------------------------------------------------------------------------
