@@ -13,6 +13,7 @@ AI 助手企业应用的实用项目集合。
 - **多 Agent 协同**：销售 Agent、技术 Agent、报价 Agent、跟进 Agent
 - **客户消息自动分析**
 - **FastAPI 后端接口**
+- **Agent 调度 Web 前端界面**（http://localhost:8000）
 - **OpenAI 调用示例**
 - **PostgreSQL 数据存储**
 - **Redis 任务队列**

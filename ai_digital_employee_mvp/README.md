@@ -48,33 +48,34 @@ cp .env.example .env
 # 3. 启动（PostgreSQL + Redis + API）
 docker compose up -d
 
-# 4. 访问 API 文档
-open http://localhost:8000/docs
+# 4. 访问
+open http://localhost:8000       # Agent 调度前端界面
+open http://localhost:8000/docs  # API 文档
 ```
 
-### 方式 2：本地开发
+### 方式 2：本地开发（含前端界面）
 
 ```bash
-# 1. 创建虚拟环境
-python -m venv .venv
-source .venv/bin/activate   # Linux/Mac
-.venv\Scripts\activate      # Windows
-
-# 2. 安装依赖
+# 1. 安装依赖
 pip install -r requirements.txt
 
-# 3. 配置环境变量
+# 2. 配置环境变量
 cp .env.example .env
 # 编辑 .env，填入 OPENAI_API_KEY
 
-# 4. 启动服务
+# 3. 启动服务
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 4. 打开浏览器
+open http://localhost:8000       # Agent 调度前端界面
+open http://localhost:8000/docs  # API 文档
 ```
 
 ## API 接口
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| GET | `/` | Agent 调度前端界面 |
 | GET | `/health` | 健康检查（含数据库状态） |
 | POST | `/process` | 处理客户消息 |
 
@@ -142,7 +143,9 @@ ai-digital-employee-mvp/
 │   ├── main.py               # FastAPI 主入口
 │   ├── models.py             # SQLAlchemy 数据模型
 │   ├── orchestrator.py       # Agent 编排器（异步并行）
-│   └── schemas.py            # Pydantic 请求/响应模型
+│   ├── schemas.py            # Pydantic 请求/响应模型
+│   └── static/
+│       └── index.html        # Agent 调度前端界面
 ├── tests/
 │   └── test_main.py          # 基础测试
 ├── .env.example              # 环境变量模板
